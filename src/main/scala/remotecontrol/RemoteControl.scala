@@ -1,17 +1,19 @@
 package remotecontrol
 
-case class MinClickWithPrevious(previous: Int, minClick: Int)
+case class MinClickWithPrevious(previous: Int, minClick: Int) {
+  def addOne() = MinClickWithPrevious(this.previous, this.minClick+1)
+}
+
 class RemoteControl(inputChannels: Array[Int], blockedChannels: Set[Int], low: Int, high: Int) {
   def traverse(): Int = {
     val gotoStart = keyPress(inputChannels.head)
     val prev = inputChannels.head
     // TODO: use gotoStart
-    val minClickSoFar = MinClickWithPrevious(prev, 0)
+    val minClickSoFar = MinClickWithPrevious(prev, gotoStart)
     val pairs: Array[(Int, Int)] = inputChannels.zip(inputChannels.drop(1))
-    pairs.foldLe
     val overallMinClick: MinClickWithPrevious = pairs.foldLeft(minClickSoFar)((sofar, cur) => {
       val (left: Int, right: Int) = cur
-      val minClickThisStep = minimumClicks(left, right, minClickSoFar.previous)
+      val minClickThisStep = minimumClicks(left, right, sofar.previous)
       MinClickWithPrevious(minClickThisStep.previous, minClickThisStep.minClick + sofar.minClick)
     })
     overallMinClick.minClick
@@ -23,13 +25,9 @@ class RemoteControl(inputChannels: Array[Int], blockedChannels: Set[Int], low: I
     val backRes = if (dest == previous) MinClickWithPrevious(src, 1) else MinClickWithPrevious(src, Int.MaxValue)
     val moveUpRes = moveUp(src, dest)
     val moveDownRes = moveDown(src, dest)
-    val backMoveUp = moveUp(previous, dest)
-    val backMoveDown = moveDown(previous, dest)
-    val min: MinClickWithPrevious = List(
-      noop, keyPressRes, backRes, moveUpRes, moveDownRes,
-      backMoveUp.copy(backMoveUp.previous, backMoveUp.minClick + 1),
-      backMoveDown.copy(backMoveDown.previous, backMoveDown.minClick + 1)
-    ).minBy(_.minClick)
+    val backMoveUp = moveUp(previous, dest).addOne()
+    val backMoveDown = moveDown(previous, dest).addOne()
+    val min: MinClickWithPrevious = List(noop, keyPressRes, backRes, moveUpRes, moveDownRes,backMoveUp,backMoveDown).minBy(_.minClick)
     println("%d %d => %d %d".format(src, dest, min.minClick, min.previous))
     min
   }
