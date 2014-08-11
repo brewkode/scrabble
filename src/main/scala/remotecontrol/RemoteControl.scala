@@ -1,7 +1,7 @@
 package remotecontrol
 
-case class MinClickWithPrevious(previous: Int, minClick: Int) {
-  def addOne() = MinClickWithPrevious(this.previous, this.minClick+1)
+case class MinClick(previous: Int, minClick: Int) {
+  def addOne() = MinClick(this.previous, this.minClick+1)
 }
 
 class RemoteControl(inputChannels: Array[Int], blockedChannels: Set[Int], low: Int, high: Int) {
@@ -9,25 +9,25 @@ class RemoteControl(inputChannels: Array[Int], blockedChannels: Set[Int], low: I
     val gotoStart = keyPress(inputChannels.head)
     val prev = inputChannels.head
     // TODO: use gotoStart
-    val minClickSoFar = MinClickWithPrevious(prev, gotoStart)
+    val minClickSoFar = MinClick(prev, gotoStart)
     val pairs: Array[(Int, Int)] = inputChannels.zip(inputChannels.drop(1))
-    val overallMinClick: MinClickWithPrevious = pairs.foldLeft(minClickSoFar)((sofar, cur) => {
+    val overallMinClick: MinClick = pairs.foldLeft(minClickSoFar)((sofar, cur) => {
       val (left: Int, right: Int) = cur
       val minClickThisStep = minimumClicks(left, right, sofar.previous)
-      MinClickWithPrevious(minClickThisStep.previous, minClickThisStep.minClick + sofar.minClick)
+      MinClick(minClickThisStep.previous, minClickThisStep.minClick + sofar.minClick)
     })
     overallMinClick.minClick
   }
 
-  def minimumClicks(src: Int, dest: Int, previous: Int): MinClickWithPrevious = {
-    val noop = if (src == dest) MinClickWithPrevious(previous, 0) else MinClickWithPrevious(previous, Int.MaxValue)
-    val keyPressRes = MinClickWithPrevious(src, keyPress(dest))
-    val backRes = if (dest == previous) MinClickWithPrevious(src, 1) else MinClickWithPrevious(src, Int.MaxValue)
+  def minimumClicks(src: Int, dest: Int, previous: Int): MinClick = {
+    val noop = if (src == dest) MinClick(previous, 0) else MinClick(previous, Int.MaxValue)
+    val keyPressRes = MinClick(src, keyPress(dest))
+    val backRes = if (dest == previous) MinClick(src, 1) else MinClick(src, Int.MaxValue)
     val moveUpRes = moveUp(src, dest)
     val moveDownRes = moveDown(src, dest)
     val backMoveUp = moveUp(previous, dest).addOne()
     val backMoveDown = moveDown(previous, dest).addOne()
-    val min: MinClickWithPrevious = List(noop, keyPressRes, backRes, moveUpRes, moveDownRes,backMoveUp,backMoveDown).minBy(_.minClick)
+    val min: MinClick = List(noop, keyPressRes, backRes, moveUpRes, moveDownRes,backMoveUp,backMoveDown).minBy(_.minClick)
     println("%d %d => %d %d".format(src, dest, min.minClick, min.previous))
     min
   }
@@ -39,12 +39,12 @@ class RemoteControl(inputChannels: Array[Int], blockedChannels: Set[Int], low: I
 
   def moveUp(src: Int, dest: Int) = {
     val path = channelsBetween(src, dest).filterNot(blockedChannels contains)
-    MinClickWithPrevious(path(path.length-2), path.length-1)
+    MinClick(path(path.length-2), path.length-1)
   }
 
   def moveDown(src: Int, dest: Int) = {
     val path = channelsBetween(dest, src).reverse.filterNot(blockedChannels contains)
-    MinClickWithPrevious(path(path.length-2), path.length-1)
+    MinClick(path(path.length-2), path.length-1)
   }
 
   def channelsBetween(left: Int, right: Int): List[Int] = {
